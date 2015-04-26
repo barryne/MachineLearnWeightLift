@@ -210,39 +210,6 @@ str(wldata)</code></pre>
 <p>There are a significant amount of variables in the weight lifting dataset that seem to have NAs, these variables need to be treated before we model the data. There are also many character variables that contain on-body sensor data therefore these need to be converted to numerics.</p>
 <pre class="r"><code>#convert sensor data from character to numeric
 wldata[,8:159] &lt;- lapply(wldata[,8:159], as.numeric)</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in lapply(wldata[, 8:159], as.numeric): NAs introduced by coercion</code></pre>
 <p>It is now possible to remove all potential model predictor variables that contain greater than 95% NAs as follows:</p>
 <p>Firstly, build a function that calculates the proportion of NA values contained by a variable.</p>
 <pre class="r"><code>nacalc &lt;- function(x) {
@@ -302,6 +269,8 @@ excludena95</code></pre>
 ##  [97] &quot;var_pitch_forearm&quot;        &quot;avg_yaw_forearm&quot;         
 ##  [99] &quot;stddev_yaw_forearm&quot;       &quot;var_yaw_forearm&quot;</code></pre>
 <pre class="r"><code>wldata &lt;- wldata[,-which(names(wldata) %in% excludena95)]
+
+#check the dimensions of wldata with the exclusions performed
 dim(wldata)</code></pre>
 <pre><code>## [1] 19622    60</code></pre>
 <p>There are also some non-predictive variables contained in the dataset. There is a variable <code>user_name</code> containing names of the experiment participants, a variable <code>cvtd_timestamp</code> containing date of experiment and other variables with low or no variability that need to be removed, for example the variable <code>new_window</code> contains 98% entries of “no”.</p>
@@ -318,7 +287,8 @@ wldata$classe &lt;- as.factor(wldata$classe)</code></pre>
 <div id="building-a-predictive-model" class="section level2">
 <h2>Building a Predictive Model</h2>
 <p>Firstly, split the dataset into a training and test set. The training set will be used to build the model. While the testing set will be used to review the out of sample model accuracy which will be more true to the potential accuracy when applied to new data in the future.</p>
-<pre class="r"><code>intrain &lt;- createDataPartition(y=wldata$classe, p = 0.8, list=FALSE)
+<pre class="r"><code>#split the wldata into 80% training and 20% testing datasets
+intrain &lt;- createDataPartition(y=wldata$classe, p = 0.8, list=FALSE)
 training &lt;- wldata[intrain, ]
 testing &lt;- wldata[-intrain, ]
 dim(training)</code></pre>
@@ -343,33 +313,33 @@ confusionMatrix(pred1, testing$classe)</code></pre>
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 1023  331  324  271  102
-##          B   12  254   22  123  108
-##          C   77  174  338  249  172
+##          A 1017  328  316  300   92
+##          B   14  237   22   95   85
+##          C   83  194  346  248  193
 ##          D    0    0    0    0    0
-##          E    4    0    0    0  339
+##          E    2    0    0    0  351
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.4981          
-##                  95% CI : (0.4823, 0.5139)
+##                Accuracy : 0.4973          
+##                  95% CI : (0.4816, 0.5131)
 ##     No Information Rate : 0.2845          
 ##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
 ##                                           
-##                   Kappa : 0.3437          
+##                   Kappa : 0.3429          
 ##  Mcnemar's Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            0.9167  0.33465  0.49415   0.0000  0.47018
-## Specificity            0.6338  0.91625  0.79253   1.0000  0.99875
-## Pos Pred Value         0.4988  0.48940  0.33465      NaN  0.98834
-## Neg Pred Value         0.9503  0.85165  0.88122   0.8361  0.89330
-## Prevalence             0.2845  0.19347  0.17436   0.1639  0.18379
-## Detection Rate         0.2608  0.06475  0.08616   0.0000  0.08641
-## Detection Prevalence   0.5228  0.13230  0.25746   0.0000  0.08743
-## Balanced Accuracy      0.7752  0.62545  0.64334   0.5000  0.73447</code></pre>
+## Sensitivity            0.9113  0.31225   0.5058   0.0000  0.48682
+## Specificity            0.6309  0.93173   0.7783   1.0000  0.99938
+## Pos Pred Value         0.4954  0.52318   0.3252      NaN  0.99433
+## Neg Pred Value         0.9471  0.84957   0.8818   0.8361  0.89636
+## Prevalence             0.2845  0.19347   0.1744   0.1639  0.18379
+## Detection Rate         0.2592  0.06041   0.0882   0.0000  0.08947
+## Detection Prevalence   0.5233  0.11547   0.2712   0.0000  0.08998
+## Balanced Accuracy      0.7711  0.62199   0.6421   0.5000  0.74310</code></pre>
 <p>This table above and the supporting statistics shows that the classification prediction using the rpart Trees Classification method predicts Classe A well enough with 91% sensitivity but does not do a great job on the other classes and has 100% error in predicting Classe E. Overall model1 does a poor job with only 50% accuracy.</p>
 <p>Next run the Confustion Matrix and Statistics on the Random Forest Model.</p>
 <pre class="r"><code>confusionMatrix(pred2, testing$classe)</code></pre>
@@ -377,34 +347,34 @@ confusionMatrix(pred1, testing$classe)</code></pre>
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 1116    0    0    0    0
-##          B    0  758    0    0    0
-##          C    0    1  684    0    0
-##          D    0    0    0  643    1
-##          E    0    0    0    0  720
+##          A 1114    2    0    0    0
+##          B    1  756    1    0    0
+##          C    0    1  683    2    0
+##          D    0    0    0  641    0
+##          E    1    0    0    0  721
 ## 
 ## Overall Statistics
-##                                           
-##                Accuracy : 0.9995          
-##                  95% CI : (0.9982, 0.9999)
-##     No Information Rate : 0.2845          
-##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
-##                                           
-##                   Kappa : 0.9994          
-##  Mcnemar's Test P-Value : NA              
+##                                          
+##                Accuracy : 0.998          
+##                  95% CI : (0.996, 0.9991)
+##     No Information Rate : 0.2845         
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
+##                                          
+##                   Kappa : 0.9974         
+##  Mcnemar's Test P-Value : NA             
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            1.0000   0.9987   1.0000   1.0000   0.9986
-## Specificity            1.0000   1.0000   0.9997   0.9997   1.0000
-## Pos Pred Value         1.0000   1.0000   0.9985   0.9984   1.0000
-## Neg Pred Value         1.0000   0.9997   1.0000   1.0000   0.9997
+## Sensitivity            0.9982   0.9960   0.9985   0.9969   1.0000
+## Specificity            0.9993   0.9994   0.9991   1.0000   0.9997
+## Pos Pred Value         0.9982   0.9974   0.9956   1.0000   0.9986
+## Neg Pred Value         0.9993   0.9991   0.9997   0.9994   1.0000
 ## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
-## Detection Rate         0.2845   0.1932   0.1744   0.1639   0.1835
-## Detection Prevalence   0.2845   0.1932   0.1746   0.1642   0.1835
-## Balanced Accuracy      1.0000   0.9993   0.9998   0.9998   0.9993</code></pre>
-<p>The output above shows that the classification prediction using the rf Random Forest method does a much better job at predicting Classe correctly when using the testing data to evaluate. Just 8 observations in the testing dataset have been mis-classified meaning there is an out-of-sample error rate of <code>8/3923</code> or 0.204%. The accuracy of this model is shown above as 99.8%.</p>
+## Detection Rate         0.2840   0.1927   0.1741   0.1634   0.1838
+## Detection Prevalence   0.2845   0.1932   0.1749   0.1634   0.1840
+## Balanced Accuracy      0.9987   0.9977   0.9988   0.9984   0.9998</code></pre>
+<p>The output above shows that the classification prediction using the rf Random Forest method, model2, does a much better job at predicting Classe correctly when using the testing data to evaluate. Just 8 observations in the testing dataset have been mis-classified meaning there is an out-of-sample error rate of <code>8/3923</code> or 0.204%. The accuracy of this model is shown above as 99.8%.</p>
 </div>
 </div>
 <div id="results" class="section level1">
