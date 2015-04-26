@@ -1,0 +1,158 @@
+Predict the Quality of Weight Lifting Exercises
+========================================================
+
+## Executive Summary
+
+Using many types of on-person devices, or wearable tech, it is now possible to collect a large amount of data about personal activity. This enables the wearer to quantify how much of a particular activity has been done. However, how well a particular activity is performed is evaluated less frequently.
+
+The prediction analysis detailed in this report will use a study carried out by Velloso E., Bulling A., Gellersen H., Ugulino W. and Fuks H. of 'Qualitative Activity Recognition of Weight Lifting Exercise' (2013, available at  http://groupware.les.inf.puc-rio.br/har). This study has collected data on how well six amatures performed a Unilateral Dumbbell Biceps Curl weight lifting exercise when instructed correctly and when instructed to carry out the weight lifting exercise incorrectly.
+
+The goal of the prediction analysis is to predict the manner in which exercises are carried out by creating a precition model based on the data collected. This report describes how the model is built, how cross validation was used, what the expected out-of-sample error is, and what choices have been made. Finally, the prediction model is used to predict 20 unseen before test cases.
+
+## Weight Lifting Exercise Dataset
+
+The datasets used during this analysis can be found at:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv (training set)
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv (test set)
+
+The data is split into the following classes, represented by the 'classe' variable:
+* exactly according to the specification (Class A), 
+* throwing the elbows to the front (Class B), 
+* lifting the dumbbell only halfway (Class C), 
+* lowering the dumbbell only halfway (Class D) and 
+* throwing the hips to the front (Class E)
+
+More information on the experiment is available at: http://groupware.les.inf.puc-rio.br/har#ixzz3V9kpEOAY
+
+## Data processing
+
+This section covers how the data is loaded into R, cleaned and processed.
+
+Firstly, load the R packages necessary for this analysis.
+The caret package will be used for model building and testing the model fit.
+```{r}
+library(knitr)
+library(caret)
+library(randomForest)
+library(e1071)
+
+#load the training and test datasets
+trainURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+download.file(trainURL, destfile= "pml-training.csv", method="curl")
+download.file(testURL, destfile= "pml-testing.csv", method="curl")
+
+wldata <- read.csv("pml-training.csv", stringsAsFactors = FALSE)
+finaltest <- read.csv("pml-testing.csv", stringsAsFactors = FALSE)
+
+dim(wldata)
+dim(finaltest)
+
+# check the detail of the weight lifting dataset for issues like NAs
+str(wldata)
+
+```
+There are a significant amount of variables in the weight lifting dataset that seem to have NAs, these variables need to be treated before we model the data. There are also many character variables that contain on-body sensor data therefore these need to be converted to numerics. 
+
+```{r, warning=FALSE}
+#convert sensor data from character to numeric
+wldata[,8:159] <- lapply(wldata[,8:159], as.numeric)
+```
+
+It is now possible to remove all potential model predictor variables that contain greater than 95% NAs as follows:
+
+Firstly, build a function that calculates the proportion of NA values contained by a variable.
+```{r}
+nacalc <- function(x) {
+        sum(is.na(x))/length(x)
+}
+```
+Then, use this function to remove weight lifting set variables with 95% or more NAs. 
+```{r}
+excludena95 <- names(which(sapply(wldata, nacalc)>=0.95))
+excludena95
+wldata <- wldata[,-which(names(wldata) %in% excludena95)]
+
+#check the dimensions of wldata with the exclusions performed
+dim(wldata)
+```
+There are also some non-predictive variables contained in the dataset. There is a variable `user_name` containing names of the experiment participants, a variable `cvtd_timestamp` containing date of experiment and other variables with low or no variability that need to be removed, for example the variable `new_window` contains 98% entries of "no". 
+
+```{r}
+#remove unnecessary variables
+wldata <- wldata[,-c(1:6)]
+wldata$classe <- as.factor(wldata$classe)
+```
+The weight lifting dataset now contains 53 potential predictor variables and the `classe` variable which is the target variable. The predictor variables consist mainly of the on-body sensor data collected during the weight lifting experiment.
+
+Now that the dataset is clean, the `classe` variable frequency is shown here.
+
+```{r}
+table(wldata$classe)
+```
+
+## Building a Predictive Model
+
+Firstly, split the dataset into a training and test set. The training set will be used to build the model. While the testing set will be used to review the out of sample model accuracy which will be more true to the potential accuracy when applied to new data in the future.
+
+```{r}
+#split the wldata into 80% training and 20% testing datasets
+intrain <- createDataPartition(y=wldata$classe, p = 0.8, list=FALSE)
+training <- wldata[intrain, ]
+testing <- wldata[-intrain, ]
+dim(training)
+dim(testing)
+```
+Next, fit a classification tree model to the training dataset.
+```{r}
+model1 <- train(classe ~ ., method="rpart", data=training)
+```
+Follow this by fitting a Random Forest model to the training dataset.
+```{r}
+model2 <- train(classe ~ ., method="rf", data=training)
+```
+
+## Model Error, Out-of-Sample
+
+The two alternative models which were built using two different machine learning algorithms can be reviewed using model diagnostics and tested for out-of-sample error rates. The out-of-sample error rates will be obtained by using the models to predict `classe` on the held aside testing dataset which was created by holding back 20% of the overall weight lifting training dataset.
+
+```{r}
+#use the models to predict classe based on new values from the testing dataset
+pred1 <- predict(model1, testing)
+pred2 <- predict(model2, testing)
+#show the correct versus incorrect classifications for each model and model statistics
+confusionMatrix(pred1, testing$classe)
+```
+This table above and the supporting statistics shows that the classification prediction using the rpart Trees Classification method predicts Classe A well enough with 91% sensitivity but does not do a great job on the other classes and has 100% error in predicting Classe E. Overall model1 does a poor job with only 50% accuracy.
+
+Next run the Confustion Matrix and Statistics on the Random Forest Model.
+
+```{r}
+confusionMatrix(pred2, testing$classe)
+```
+The output above shows that the classification prediction using the rf Random Forest method, model2, does a much better job at predicting Classe correctly when using the testing data to evaluate. Just 8 observations in the testing dataset have been mis-classified meaning there is an out-of-sample error rate of `8/3923` or 0.204%. The accuracy of this model is shown above as 99.8%.
+
+# Results
+
+Finally, the more accurate of the two models, the Random Forest model, will be used to predict the `classe` based on the finaltest dataset.
+
+```{r}
+predfinal <- predict(model2, finaltest)
+predfinal
+```
+To submit these final predictions for evaluation the following is used to create the 20 files necessary with each prediction contained separately. 
+```{r}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+predfinal <- as.character(predfinal)
+pml_write_files(predfinal)
+```
+The files were submitted to https://class.coursera.org/predmachlearn-013/assignment which confirmed 100% accuracy of the model on these 20 finaltest cases.
